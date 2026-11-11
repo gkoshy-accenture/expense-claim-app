@@ -1,0 +1,14 @@
+[Unit]
+Description=Expense claim demo app
+After=network.target
+
+[Service]
+User=jenkins
+WorkingDirectory=/opt/demo-app
+Environment=HOST=127.0.0.1
+Environment=PORT=3000
+ExecStart=/usr/bin/node /opt/demo-app/server.js
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

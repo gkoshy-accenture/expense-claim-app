@@ -1,0 +1,37 @@
+// REFERENCE ONLY. The workshop host pastes this into the Jenkins job configuration
+// ("Pipeline script"), so attendees cannot change the deploy steps by editing the repo.
+//
+// BRANCH is validated, passed to Git as a branch name, and never placed inside a shell command.
+pipeline {
+  agent any
+  parameters {
+    string(name: 'BRANCH', defaultValue: 'main', description: 'Git branch to build and deploy')
+  }
+  options { timeout(time: 10, unit: 'MINUTES') }
+  stages {
+    stage('Validate input') {
+      steps {
+        script {
+          if (!(params.BRANCH ==~ /^[A-Za-z0-9._\/-]{1,60}$/)) {
+            error('BRANCH may only contain letters, numbers, . _ / - (max 60 characters)')
+          }
+        }
+      }
+    }
+    stage('Checkout') {
+      steps {
+        git url: 'https://github.com/YOUR-ACCOUNT/expense-claim-app.git', branch: params.BRANCH
+      }
+    }
+    stage('Test') {
+      steps { sh 'node --version && npm test' }
+    }
+    stage('Deploy') {
+      steps {
+        sh 'rsync -a --delete --exclude .git --exclude deploy ./ /opt/demo-app/'
+        sh 'sudo /usr/bin/systemctl restart demo-app'
+        sh 'sleep 2 && curl -fsS http://127.0.0.1:3000/health'
+      }
+    }
+  }
+}

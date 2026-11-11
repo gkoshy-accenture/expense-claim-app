@@ -1,0 +1,12 @@
+# Replace the hostname with your own. Jenkins keeps the root; the app lives under /myapp/.
+your-host.example.com {
+    redir /myapp /myapp/
+
+    handle_path /myapp/* {
+        reverse_proxy 127.0.0.1:3000
+    }
+
+    handle {
+        reverse_proxy 127.0.0.1:8080
+    }
+}
