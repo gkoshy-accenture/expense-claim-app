@@ -1,9 +1,14 @@
-# Replace the hostname with your own. Jenkins keeps the root; the app lives under /myapp/.
-your-host.example.com {
+# Replace the hostname with your own. Jenkins keeps the root; the app lives under /myapp/
+# and the database MCP server under /db-mcp/ (it requires a bearer token).
+YOUR-HOSTNAME {
     redir /myapp /myapp/
 
     handle_path /myapp/* {
         reverse_proxy 127.0.0.1:3000
+    }
+
+    handle_path /db-mcp/* {
+        reverse_proxy 127.0.0.1:3100
     }
 
     handle {

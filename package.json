@@ -1,12 +1,13 @@
 {
   "name": "expense-claim-app",
   "version": "1.0.0",
-  "description": "Workshop demo app: a tiny expense claim form with no dependencies",
+  "description": "Workshop demo app: a tiny expense claim form (Azure SQL via mssql, SQLite fallback for local runs)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "test": "node --test"
   },
-  "engines": { "node": ">=18" },
+  "dependencies": { "mssql": "^11.0.1" },
+  "engines": { "node": ">=22.13" },
   "license": "MIT"
 }

@@ -1,0 +1,17 @@
+[Unit]
+Description=Read-only MCP server for the expense claims database
+After=network.target
+
+[Service]
+User=jenkins
+WorkingDirectory=/opt/mcp-db
+EnvironmentFile=/etc/mcp-db.env
+Environment=HOST=127.0.0.1
+Environment=PORT=3100
+Environment=DB_PATH=/var/lib/demo-app/claims.db
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning /opt/mcp-db/server.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

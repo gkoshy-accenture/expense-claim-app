@@ -23,14 +23,20 @@ pipeline {
         git url: 'https://github.com/YOUR-ACCOUNT/expense-claim-app.git', branch: params.BRANCH
       }
     }
+    stage('Install') {
+      steps {
+        // --ignore-scripts: dependencies cannot run code at install time. Commit package-lock.json so "npm ci" is used.
+        sh 'if [ -f package-lock.json ]; then npm ci --omit=dev --ignore-scripts --no-audit --no-fund; else npm install --omit=dev --ignore-scripts --no-audit --no-fund; fi'
+      }
+    }
     stage('Test') {
       steps { sh 'node --version && npm test' }
     }
     stage('Deploy') {
       steps {
-        sh 'rsync -a --delete --exclude .git --exclude deploy ./ /opt/demo-app/'
+        sh 'rsync -a --delete --exclude .git --exclude deploy --exclude data --exclude mcp-db ./ /opt/demo-app/'
         sh 'sudo /usr/bin/systemctl restart demo-app'
-        sh 'sleep 2 && curl -fsS http://127.0.0.1:3000/health'
+        sh 'sleep 3 && curl -fsS http://127.0.0.1:3000/health'
       }
     }
   }

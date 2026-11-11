@@ -3,12 +3,12 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { CATEGORIES, validateClaim, createStore } = require('./lib/claims');
+const { CATEGORIES, validateClaim, storeFromEnv } = require('./lib/claims');
 
 const HOST = process.env.HOST || '127.0.0.1'; // keep local; Caddy exposes it over HTTPS
 const PORT = Number(process.env.PORT || 3000);
 const PUBLIC_DIR = path.join(__dirname, 'public');
-const store = createStore();
+const store = storeFromEnv(process.env, path.join(__dirname, 'data', 'claims.db'));
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -51,25 +51,30 @@ function serveStatic(req, res) {
 const server = http.createServer(async (req, res) => {
   const route = req.url.split('?')[0];
   try {
-    if (route === '/health') return sendJson(res, 200, { status: 'ok' });
+    if (route === '/health') return sendJson(res, 200, { status: 'ok', database: store.kind });
+    if (route === '/health/db') {
+      try { await store.ping(); return sendJson(res, 200, { status: 'ok', database: store.kind }); }
+      catch (e) { console.error('Database check failed:', e.message); return sendJson(res, 503, { status: 'error', database: store.kind }); }
+    }
     if (route === '/api/categories' && req.method === 'GET') return sendJson(res, 200, CATEGORIES);
-    if (route === '/api/claims' && req.method === 'GET') return sendJson(res, 200, store.list());
+    if (route === '/api/claims' && req.method === 'GET') return sendJson(res, 200, await store.list());
     if (route === '/api/claims' && req.method === 'POST') {
       let payload;
       try { payload = JSON.parse(await readBody(req)); } catch (e) { return sendJson(res, 400, { errors: ['Send the claim as valid JSON.'] }); }
       const result = validateClaim(payload);
       if (!result.ok) return sendJson(res, 422, { errors: result.errors });
-      return sendJson(res, 201, store.add(result.claim));
+      return sendJson(res, 201, await store.add(result.claim));
     }
     if (req.method === 'GET') return serveStatic(req, res);
     res.writeHead(405); res.end('Method not allowed');
   } catch (e) {
-    sendJson(res, 500, { errors: ['Something went wrong on the server.'] });
+    console.error('Request failed:', e.message); // details stay in the server log, not in the response
+    sendJson(res, 503, { errors: ['The database did not respond. If it was idle it may be waking up, so try again in about a minute.'] });
   }
 });
 
 if (require.main === module) {
-  server.listen(PORT, HOST, () => console.log('Expense claim app listening on http://' + HOST + ':' + PORT));
+  server.listen(PORT, HOST, () => console.log('Expense claim app listening on http://' + HOST + ':' + PORT + ' (database: ' + store.kind + ')'));
 }
 
 module.exports = server;

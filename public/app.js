@@ -54,8 +54,14 @@ function renderClaims(claims) {
 }
 
 async function loadClaims() {
-  const res = await fetch('api/claims');
-  renderClaims(await res.json());
+  try {
+    const res = await fetch('api/claims');
+    const data = await res.json();
+    if (!res.ok) { showErrors(data.errors || ['Could not load claims.']); return; }
+    renderClaims(data);
+  } catch (e) {
+    showErrors(['Could not reach the server. Check your connection and refresh.']);
+  }
 }
 
 function showErrors(list) {

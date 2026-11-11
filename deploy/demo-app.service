@@ -7,8 +7,13 @@ User=jenkins
 WorkingDirectory=/opt/demo-app
 Environment=HOST=127.0.0.1
 Environment=PORT=3000
-ExecStart=/usr/bin/node /opt/demo-app/server.js
+# Fallback used only when /etc/demo-app.env does not set DB_SERVER (local SQLite file)
+Environment=DB_PATH=/var/lib/demo-app/claims.db
+# Azure SQL settings (DB_SERVER, DB_NAME, DB_USER, DB_PASSWORD, ...). The leading "-" means "optional".
+EnvironmentFile=-/etc/demo-app.env
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning /opt/demo-app/server.js
 Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
